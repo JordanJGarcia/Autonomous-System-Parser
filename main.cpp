@@ -46,8 +46,8 @@ multimap<int, sysData, greater<int>>        sortSystems     (map< int, sysData >
 /************************/
 int main()
 {
-	string line, as_path;
-	int field, start, stop;
+    string line, as_path;
+    int field, start, stop;
 	
     // stores AS numbers of current line
     vector<int> as_numbers;
@@ -56,161 +56,159 @@ int main()
     vector<sysData> systems;
 
     // stores AS numbers to add to above vector
-	vector<sysData> path;
+    vector<sysData> path;
 	
     sysData s1(-1);	
 	
     clock_t begin = clock(); // used to measure running time of program.
 
-	map<int, sysData> systemsMap;
+    map<int, sysData> systemsMap;
 	
-	while(getline(cin, line))	// while there is still data
-	{
-		field = 0;
-		as_path = "";  // reset as_number
+    while(getline(cin, line))	// while there is still data
+    {
+        field = 0;
+        as_path = "";  // reset as_number
 
-		for(int i = 0; i < line.size(); i++)
+        for(int i = 0; i < line.size(); i++)
         {
             // separate by fields
-			if(line.at(i) == '|')	
+            if(line.at(i) == '|')	
 			{
-				field++;
+                field++;
 
-				if(field == 6)
-					start = i+1;
+                if(field == 6)
+                    start = i+1;
 			
-				if(field == 7)
+                if(field == 7)
                 {
-					stop = i;
+                    stop = i;
                     break;
                 }
-			}
-
-		}
+            }
+        }
 
         // get 7th field only and remove duplicates
-		as_path = line.substr(start, stop-start);
-		as_path = move(removeAssets(as_path));
+        as_path = line.substr(start, stop-start);
+        as_path = move(removeAssets(as_path));
 		
-		// sort as_path to get new as_numbers
-		as_numbers = move(splitPath(as_path));		
+        // sort as_path to get new as_numbers
+        as_numbers = move(splitPath(as_path));		
 
         // vector of iterators through our map for efficient lookup
-		vector<map<int, sysData>::iterator> locations;
+        vector<map<int, sysData>::iterator> locations;
 
-		for(int i = 0; i < as_numbers.size(); i++)
-		{
-			// map<int, sysData>::iterator it;
-			auto it = systemsMap.find(as_numbers[i]);
+        for(int i = 0; i < as_numbers.size(); i++)
+        {
+            // map<int, sysData>::iterator it;
+            auto it = systemsMap.find(as_numbers[i]);
 						
-			path.push_back(as_numbers[i]);
+            path.push_back(as_numbers[i]);
 			
-			// if the number has not been encountered
+            // if the number has not been encountered
             if(it == systemsMap.end())
-			{
+            {
                 // create a new sysData object and add it to map
-				sysData sd(as_numbers[i], systems.size());
-				systemsMap[as_numbers[i]] = sd;
-				systems.push_back(sd);
+                sysData sd(as_numbers[i], systems.size());
+                systemsMap[as_numbers[i]] = sd;
+                systems.push_back(sd);
 				
                 // get iterator to new number to pass to addSystems()
                 // much faster search with map
-				it = systemsMap.find(as_numbers[i]);
-				locations.push_back(it);
-			}
-			else
-			   locations.push_back(it);
-		}
+                it = systemsMap.find(as_numbers[i]);
+                locations.push_back(it);
+            }
+            else
+                locations.push_back(it);
+        }
 
-		addSystems(path, systems, locations);
+        addSystems(path, systems, locations);
 		
-		path.clear();		
-		locations.clear();
-	}
+        path.clear();		
+        locations.clear();
+    }
 
-	clock_t end = clock(); // measures running time of program
+    clock_t end = clock(); // measures running time of program
 
     auto sortingMap = sortSystems(systemsMap, systems);
     printSystems(sortingMap, systems);
 
-	// if you want to see how long program takes to run uncomment this.
-	cout << "Running time: " << double(end-begin) / CLOCKS_PER_SEC << " seconds." << endl;
-	return 0;
+    // if you want to see how long program takes to run uncomment this.
+    cout << "Running time: " << double(end-begin) / CLOCKS_PER_SEC << " seconds." << endl;
+    return 0;
 }
 
 // function to remove ASSETS
 string removeAssets(string & path)
 {
-	string refinedPath = "";
-	int index = 0;
+    string refinedPath = "";
+    int index = 0;
 
-	for(int i = 0; i < path.size(); i++)
-	{
-		if(path.at(i) == '[')
-			break;
-		
-		refinedPath += path.at(i);
-	}
-	return refinedPath;
+    for(int i = 0; i < path.size(); i++)
+    {
+        if(path.at(i) == '[')
+            break;
+
+        refinedPath += path.at(i);
+    }
+    return refinedPath;
 }
 
 // place unique and new  numbers into a vector
 vector<int> splitPath(const string & path)
 {
-	istringstream stringToSplit(path);
-	vector<int> resulting_as_numbers;
+    istringstream stringToSplit(path);
+    vector<int> resulting_as_numbers;
 
-	for(string str; getline(stringToSplit, str, ' '); (!exists(stoi(str), resulting_as_numbers)) ? resulting_as_numbers.push_back(stoi(str)) : displayError());
+    for(string str; getline(stringToSplit, str, ' '); (!exists(stoi(str), resulting_as_numbers)) ? resulting_as_numbers.push_back(stoi(str)) : displayError());
 
-	return resulting_as_numbers;
+    return resulting_as_numbers;
 }
 
 //used in splitPath function
 void displayError()
 {
-	//cout << "already exists." << endl;
+    //cout << "already exists." << endl;
 }
 
 
 // adds new systems to vector of sysData objects
 void addSystems(const vector<sysData> & add, vector<sysData> & original, vector<map<int, sysData>::iterator> & it)
 {
-	auto spot = it.size();		
+    auto spot = it.size();		
 
-	for(int i = 0; i < add.size(); i++)
-	{
-		auto mainSystem = add[i];
+    for(int i = 0; i < add.size(); i++)
+    {
+        auto mainSystem = add[i];
+        auto location = it.size() - (spot--);
+        auto sysLocation = it[location]->second.getLocation();		
 
-		auto location = it.size() - (spot--);
-		auto sysLocation = it[location]->second.getLocation();		
+        if(i == 0)
+        {
+            const auto & system = add[1].getSystem();
 
-		if(i == 0)
-		{
-			const auto & system = add[1].getSystem();
+            original[sysLocation].addNeighbor(system);
+        }
+        else if(i == add.size()-1)
+        {
+            const auto & system1 = add[i-1].getSystem();
 
-			original[sysLocation].addNeighbor(system);
-		}
-		else if(i == add.size()-1)
-		{
-			const auto & system1 = add[i-1].getSystem();
+            original[sysLocation].addNeighbor(system1);
+        }
+        else
+        {
+            const auto & system1 = add[i-1].getSystem();
+            const auto & system2 = add[i+1].getSystem();
 
-			original[sysLocation].addNeighbor(system1);
-		}
-		else
-		{
-			const auto & system1 = add[i-1].getSystem();
-			const auto & system2 = add[i+1].getSystem();
-
-			original[sysLocation].addNeighbor(system1);
-			original[sysLocation].addNeighbor(system2);
-		}
-	}	
+            original[sysLocation].addNeighbor(system1);
+            original[sysLocation].addNeighbor(system2);
+        }
+    }	
 }
 
 
 multimap<int, sysData, greater<int>> sortSystems(map< int, sysData > & sysMap, vector<sysData> & systems)
 {
-	multimap<int, sysData, greater<int> > sortingMap;
+    multimap<int, sysData, greater<int> > sortingMap;
     auto it = sysMap.begin();
 
     while(it != sysMap.end())
