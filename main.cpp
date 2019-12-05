@@ -1,21 +1,22 @@
-/*
-
-NAME: Jordan Garcia
-DATE: 09/19/2019
-
-DESCRIPTION:
-
-This program goes through AS data and aquires all the unique numbers in the data.
-It then calculates the amount of neighbors each AS number has and stores it as 
-member data in a custom class representing each number and its neighbors. 
-After that it prints the data out in an organized format.
-
-To compile and run the program type in the command line:
-
-make
-./proj_1 < TESTFILE 		( where TESTFILE is the file you are using to test the program )
-
-*/
+/**********************************************************************/
+/*                                                                    */
+/* NAME: Jordan Garcia                                                */
+/* DATE: 09/19/2019                                                   */
+/*                                                                    */
+/* DESCRIPTION:                                                       */
+/*                                                                    */
+/* This program goes through AS data and aquires all the unique       */
+/* numbers in the data. It then calculates the amount of neighbors    */
+/* each AS number has and stores it as member data in a custom class  */
+/* representing each number and its neighbors. After that it prints   */
+/* the data out in an organized format.                               */
+/*                                                                    */
+/* To compile and run the program type in the command line:           */
+/*                                                                    */
+/* make                                                               */
+/* ./proj_1 < TESTFILE 		                                          */
+/*   ( where TESTFILE is the file you are using to test the program ) */   
+/**********************************************************************/
 
 	
 #include <iostream>
@@ -28,119 +29,121 @@ make
 #include <map>
 using namespace std;
 
+// function declarations
+int                                         process_data( void );
+vector<int>                                 get_start_stop( string line );
+string                                      remove_assets( string & );
+vector<int>                                 sort_path( const string & );
+void 										put_systems_in_map( vector<int> & as_numbers, map<int, sysData> & systems_map, vector<sysData> & systems );
+void                                        add_systems( const vector<sysData> &, vector<sysData> &, vector<map<int, sysData>::iterator> & );
+multimap<int, sysData, greater<int>>        sort_systems( map< int, sysData > &, vector<sysData> & );
+void                                        print_systems( multimap<int, sysData , greater<int>> &, vector<sysData> & );
+void                                        display_error( void );
 
-// global variables
-// vector<sysData> systems;
 
 
-string                                      removeAssets    (string & path);
-vector<int>                                 splitPath       (const string & path);
-void                                        displayError    ();
-void                                        addSystems      (const vector<sysData> & add, vector<sysData> & original, vector<map<int, sysData>::iterator> & it);
-void                                        printSystems    (multimap<int, sysData , greater<int> > & sortedMap, vector<sysData> & systemsVec);
-multimap<int, sysData, greater<int>>        sortSystems     (map< int, sysData > & sysMap, vector<sysData> & systems);
-
-
-/************************/
-/*      begin main      */
-/************************/
+/* begin main */
 int main()
 {
-    string line, as_path;
-    int field, start, stop;
-	
-    // stores AS numbers of current line
-    vector<int> as_numbers;
+    clock_t begin = clock();
+	if( process_data() != 0 )
+		return EXIT_FAILURE;
 
-    // stores all systems we encounter throughout file
-    vector<sysData> systems;
+    clock_t end = clock(); // measures running time of program
 
-    // stores AS numbers to add to above vector
-    vector<sysData> path;
-	
-    sysData s1(-1);	
-	
-    clock_t begin = clock(); // used to measure running time of program.
+    cout << "Running time: " << double(end-begin) / CLOCKS_PER_SEC << " seconds." << endl;
 
-    map<int, sysData> systemsMap;
-	
-    while(getline(cin, line))	// while there is still data
+    return EXIT_SUCCESS;
+} /* end main */
+
+
+/* processes the data in the files
+  		returns 1 if failure, 0 otherwise
+*/	
+int process_data( void )
+{
+	string line, as_path;
+    int start, stop;
+    vector<int> as_numbers, start_stop;  
+    vector<sysData> systems; // stores all systems we encounter throughout file
+    map<int, sysData> systems_map;	
+
+	// while there is still data
+    while ( getline( cin, line ) )
     {
-        field = 0;
-        as_path = "";  // reset as_number
+    	// reset as_path
+        as_path = "";
 
-        for(int i = 0; i < line.size(); i++)
+        // collect start/stop points in line. 
+        start_stop = get_start_stop( line );
+        start = start_stop[0];
+        stop = start_stop[1];
+
+        // error checking
+        if( start_stop.size() < 2 )
         {
-            // separate by fields
-            if(line.at(i) == '|')	
-			{
-                field++;
-
-                if(field == 6)
-                    start = i+1;
-			
-                if(field == 7)
-                {
-                    stop = i;
-                    break;
-                }
-            }
+            cerr << "Could not collect start/stop. Terminating program." << endl;
+            return 1;
         }
 
-        // get 7th field only and remove duplicates
+        // get entire AS Path from line
         as_path = line.substr(start, stop-start);
-        as_path = move(removeAssets(as_path));
+    
+        // remove duplicates
+        as_path = move(remove_assets(as_path));
 		
         // sort as_path to get new as_numbers
-        as_numbers = move(splitPath(as_path));		
+        as_numbers = move(sort_path(as_path));		
 
         // vector of iterators through our map for efficient lookup
         vector<map<int, sysData>::iterator> locations;
 
-        for(int i = 0; i < as_numbers.size(); i++)
-        {
-            // map<int, sysData>::iterator it;
-            auto it = systemsMap.find(as_numbers[i]);
-						
-            path.push_back(as_numbers[i]);
-			
-            // if the number has not been encountered
-            if(it == systemsMap.end())
-            {
-                // create a new sysData object and add it to map
-                sysData sd(as_numbers[i], systems.size());
-                systemsMap[as_numbers[i]] = sd;
-                systems.push_back(sd);
-				
-                // get iterator to new number to pass to addSystems()
-                // much faster search with map
-                it = systemsMap.find(as_numbers[i]);
-                locations.push_back(it);
-            }
-            else
-                locations.push_back(it);
-        }
-
-        addSystems(path, systems, locations);
-		
-        path.clear();		
-        locations.clear();
+        // add new as_numbers to systems_map
+     	put_systems_in_map( as_numbers, systems_map, systems );
     }
 
-    clock_t end = clock(); // measures running time of program
+    // sort & print map
+    auto sorting_map = sort_systems(systems_map, systems);
+    print_systems(sorting_map, systems);
 
-    auto sortingMap = sortSystems(systemsMap, systems);
-    printSystems(sortingMap, systems);
-
-    // if you want to see how long program takes to run uncomment this.
-    cout << "Running time: " << double(end-begin) / CLOCKS_PER_SEC << " seconds." << endl;
     return 0;
 }
 
-// function to remove ASSETS
-string removeAssets(string & path)
+/* returns a vector with 2 integers
+	 vec[0] = start
+	 vec[1] = stop
+*/
+vector<int> get_start_stop( string line )
 {
-    string refinedPath = "";
+    vector<int> start_stop;
+    int line_size = line.size();
+    int field;
+
+    for( int i = 0; i < line_size; i++ )
+    {
+        if( line.at( i ) == '|' )
+        {
+            field++;
+
+            if( field  == 6 )
+                start_stop.push_back( (i + 1) );
+
+            if( field == 7 )
+            {
+                start_stop.push_back( i );
+                //return start_stop;
+                break;
+            }
+        }
+    }
+
+    return start_stop;
+}
+
+/* removes assets from as_path */
+string remove_assets( string & path )
+{
+    string refined_path = "";
     int index = 0;
 
     for(int i = 0; i < path.size(); i++)
@@ -148,31 +151,64 @@ string removeAssets(string & path)
         if(path.at(i) == '[')
             break;
 
-        refinedPath += path.at(i);
+        refined_path += path.at(i);
     }
-    return refinedPath;
+    return refined_path;
 }
 
-// place unique and new  numbers into a vector
-vector<int> splitPath(const string & path)
+/* place new as_numbers into a vector<int> */
+vector<int> sort_path( const string & path )
 {
     istringstream stringToSplit(path);
     vector<int> resulting_as_numbers;
 
-    for(string str; getline(stringToSplit, str, ' '); (!exists(stoi(str), resulting_as_numbers)) ? resulting_as_numbers.push_back(stoi(str)) : displayError());
+    for(string str; 
+        getline(stringToSplit, str, ' ');
+        (!exists(stoi(str), resulting_as_numbers)) ? resulting_as_numbers.push_back(stoi(str)) : display_error()
+       );
 
     return resulting_as_numbers;
 }
 
-//used in splitPath function
-void displayError()
+/* puts new systems into map for sorting */
+void put_systems_in_map( vector<int> & as_numbers, map<int, sysData> & systems_map, vector<sysData> & systems )
 {
-    //cout << "already exists." << endl;
+	// vector of iterators through our map for efficient lookup
+    vector<map<int, sysData>::iterator> locations;
+
+    // stores AS numbers to add to above vector
+    vector<sysData> path;
+
+    for(int i = 0; i < as_numbers.size(); i++)
+    {
+        auto it = systems_map.find(as_numbers[i]);
+						
+        path.push_back(as_numbers[i]);
+			
+        // if the number has not been encountered
+        if(it == systems_map.end())
+        {
+            // create a new sysData object and add it to map
+            sysData sd(as_numbers[i], systems.size());
+            systems_map[as_numbers[i]] = sd;
+            systems.push_back(sd);
+				
+            // get iterator to new number to pass to addSystems()
+            it = systems_map.find(as_numbers[i]);
+            locations.push_back(it);
+        }
+        else
+            locations.push_back(it);
+    }
+
+    add_systems(path, systems, locations);
+		
+    path.clear();		
+    locations.clear();
 }
 
-
-// adds new systems to vector of sysData objects
-void addSystems(const vector<sysData> & add, vector<sysData> & original, vector<map<int, sysData>::iterator> & it)
+/* adds new systems to vector of sysData objects */
+void add_systems( const vector<sysData> & add, vector<sysData> & original, vector<map<int, sysData>::iterator> & it )
 {
     auto spot = it.size();		
 
@@ -205,28 +241,34 @@ void addSystems(const vector<sysData> & add, vector<sysData> & original, vector<
     }	
 }
 
-
-multimap<int, sysData, greater<int>> sortSystems(map< int, sysData > & sysMap, vector<sysData> & systems)
+/* sorts systems so they are in correct order to print to console */
+multimap<int, sysData, greater<int>> sort_systems( map< int, sysData > &sys_map, vector<sysData> & systems )
 {
-    multimap<int, sysData, greater<int> > sortingMap;
-    auto it = sysMap.begin();
+    multimap<int, sysData, greater<int> > sorting_map;
+    auto it = sys_map.begin();
 
-    while(it != sysMap.end())
+    while(it != sys_map.end())
     {
         const auto & loc = it->second.getLocation();
-        sortingMap.insert(make_pair(systems[loc].getNumNeighbors(), it->second));
+        sorting_map.insert(make_pair(systems[loc].getNumNeighbors(), it->second));
         it++;
     }
 
-    return sortingMap; 
+    return sorting_map; 
 }
 
-
-void printSystems(multimap<int, sysData, greater<int>> & sortedMap, vector<sysData> & systemsVec)
+/* prints systems and their data to console */
+void print_systems( multimap<int, sysData, greater<int>> & sorted_map, vector<sysData> & systems_vec )
 {
-    for(const auto & pair : sortedMap)
+    for(const auto & pair : sorted_map)
     {
         const auto & loc = pair.second.getLocation();
-        systemsVec[loc].printData();
+        systems_vec[loc].printData();
     }
+}
+
+/* used in sort_path() */
+void display_error( void )
+{
+    //cout << "already exists." << endl;
 }
