@@ -20,6 +20,7 @@
 
 	
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <vector>
 #include <sstream>
@@ -51,7 +52,8 @@ int main()
 
     clock_t end = clock(); // measures running time of program
 
-    cout << "Running time: " << double(end-begin) / CLOCKS_PER_SEC << " seconds." << endl;
+    cout << fixed << showpoint << setprecision(2) << "Running time: " 
+         << double(end-begin) / CLOCKS_PER_SEC << " seconds." << endl;
 
     return EXIT_SUCCESS;
 } /* end main */
@@ -68,6 +70,8 @@ int process_data( void )
     vector<sysData> systems; // stores all systems we encounter throughout file
     map<int, sysData> systems_map;	
 
+    int counter = 0;
+
 	// while there is still data
     while ( getline( cin, line ) )
     {
@@ -78,7 +82,7 @@ int process_data( void )
         start_stop = get_start_stop( line );
         start = start_stop[0];
         stop = start_stop[1];
-
+    
         // error checking
         if( start_stop.size() < 2 )
         {
@@ -88,10 +92,10 @@ int process_data( void )
 
         // get entire AS Path from line
         as_path = line.substr(start, stop-start);
-    
+        
         // remove duplicates
         as_path = move(remove_assets(as_path));
-		
+
         // sort as_path to get new as_numbers
         as_numbers = move(sort_path(as_path));		
 
@@ -100,9 +104,11 @@ int process_data( void )
 
         // add new as_numbers to systems_map
      	put_systems_in_map( as_numbers, systems_map, systems );
+
+        counter++;
     }
 
-    // sort & print map
+    // sort & print systems
     auto sorting_map = sort_systems(systems_map, systems);
     print_systems(sorting_map, systems);
 
@@ -221,13 +227,11 @@ void add_systems( const vector<sysData> & add, vector<sysData> & original, vecto
         if(i == 0)
         {
             const auto & system = add[1].getSystem();
-
             original[sysLocation].addNeighbor(system);
         }
         else if(i == add.size()-1)
         {
             const auto & system1 = add[i-1].getSystem();
-
             original[sysLocation].addNeighbor(system1);
         }
         else

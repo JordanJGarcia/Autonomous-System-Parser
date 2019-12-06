@@ -73,7 +73,7 @@ void sysData::addNeighbor(const int & n)
 {
 	map<int, int>::iterator it;
 	it = neighborMap.find(n); //search if neighbor already exists ( preventing duplicates )
-	if(it == neighborMap.end())
+	if(it == neighborMap.end() && n > 0)
 		neighborMap.insert(make_pair(n, getSystem()));
 }
 
