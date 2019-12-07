@@ -14,8 +14,8 @@
 /* To compile and run the program type in the command line:           */
 /*                                                                    */
 /* make                                                               */
-/* ./proj_1 < TESTFILE 		                                          */
-/*   ( where TESTFILE is the file you are using to test the program ) */   
+/* ./proj_1 < TESTFILE                                                */
+/*                                                                    */
 /**********************************************************************/
 
 	
@@ -70,8 +70,6 @@ int process_data( void )
     vector<sysData> systems; // stores all systems we encounter throughout file
     map<int, sysData> systems_map;	
 
-    int counter = 0;
-
 	// while there is still data
     while ( getline( cin, line ) )
     {
@@ -90,22 +88,17 @@ int process_data( void )
             return 1;
         }
 
-        // get entire AS Path from line
+        // create substring of AS Path from line
         as_path = line.substr(start, stop-start);
         
-        // remove duplicates
+        // remove assets [] from AS Path
         as_path = move(remove_assets(as_path));
 
         // sort as_path to get new as_numbers
         as_numbers = move(sort_path(as_path));		
 
-        // vector of iterators through our map for efficient lookup
-        vector<map<int, sysData>::iterator> locations;
-
         // add new as_numbers to systems_map
      	put_systems_in_map( as_numbers, systems_map, systems );
-
-        counter++;
     }
 
     // sort & print systems
