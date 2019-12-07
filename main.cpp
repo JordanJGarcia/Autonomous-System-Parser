@@ -35,7 +35,7 @@ int                                         process_data( void );
 vector<int>                                 get_start_stop( string line );
 string                                      remove_assets( string & );
 vector<int>                                 sort_path( const string & );
-void 										put_systems_in_map( vector<int> & as_numbers, map<int, sysData> & systems_map, vector<sysData> & systems );
+void                                        put_systems_in_map( vector<int> & as_numbers, map<int, sysData> & systems_map, vector<sysData> & systems );
 void                                        add_systems( const vector<sysData> &, vector<sysData> &, vector<map<int, sysData>::iterator> & );
 multimap<int, sysData, greater<int>>        sort_systems( map< int, sysData > &, vector<sysData> & );
 void                                        print_systems( multimap<int, sysData , greater<int>> &, vector<sysData> & );
@@ -47,8 +47,8 @@ void                                        display_error( void );
 int main()
 {
     clock_t begin = clock();
-	if( process_data() != 0 )
-		return EXIT_FAILURE;
+    if( process_data() != 0 )
+        return EXIT_FAILURE;
 
     clock_t end = clock(); // measures running time of program
 
@@ -64,7 +64,7 @@ int main()
 */	
 int process_data( void )
 {
-	string line, as_path;
+    string line, as_path;
     int start, stop;
     vector<int> as_numbers, start_stop;  
     vector<sysData> systems; // stores all systems we encounter throughout file
